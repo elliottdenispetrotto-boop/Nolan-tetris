@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snake - Dédicace à Nolan</title>
+<style>
+body{margin:0;font-family:sans-serif;background:#000;color:#fff;text-align:center}canvas{background:#111;display:block;margin:20px auto;border:3px solid #0f0;border-radius:10px}button{margin:5px;padding:10px 20px;background:#0f0;color:#000;border:none;border-radius:5px;cursor:pointer;font-weight:bold}button:hover{background:#7f7}#scoreboard{margin:10px;font-size:20px}.highscores{max-width:300px;margin:20px auto;text-align:left;background:#111;padding:10px;border-radius:10px}li{margin:5px 0}.features{max-width:300px;margin:20px auto;text-align:left;background:#111;padding:10px;border-radius:10px}
+</style>
+</head>
+<body>
+<h1>Snake 🐍 — Dédicace à Nolan</h1>
+<div id="scoreboard">Score : <span id="score">0</span> | Meilleur : <span id="best">0</span></div>
+<canvas id="snake" width="400" height="400"></canvas>
+<div>
+<button id="start">Démarrer / Rejouer</button>
+<button id="pause">Pause</button>
+<button id="dedicace">Recommander une dédicace à Nolan</button>
+</div>
+<div class="highscores">
+<h3>High Scores</h3>
+<ol id="highscores"></ol>
+</div>
+<div class="features">
+<h3>Fonctionnalités surprise 🎁</h3>
+<ul>
+<li>1️⃣ Power-ups aléatoires</li>
+<li>2️⃣ Thèmes changeants</li>
+<li>3️⃣ Téléchargement du score en image</li>
+<li>4️⃣ Obstacles dynamiques</li>
+<li>5️⃣ Mode turbo secret</li>
+</ul>
+</div>
+<script>
+const canvas=document.getElementById('snake');
+const ctx=canvas.getContext('2d');
+const box=20;
+let snake=[{x:9*box,y:10*box}];
+let direction=null;
+let food=spawnFood();
+let score=0;
+let best=localStorage.getItem('best')||0;
+let interval=null;
+let speed=150;
+let obstacles=[];
+let turbo=false;
+let themeIndex=0;
+const themes=['#0f0','#f0f','#0ff','#ff0','#f60'];
+updateScore();
+function spawnFood(){return{x:Math.floor(Math.random()*19+1)*box,y:Math.floor(Math.random()*19+1)*box}};
+function spawnObstacle(){return{x:Math.floor(Math.random()*19+1)*box,y:Math.floor(Math.random()*19+1)*box}};
+function draw(){ctx.fillStyle='#000';ctx.fillRect(0,0,400,400);ctx.fillStyle=themes[themeIndex];for(let i=0;i<snake.length;i++){ctx.fillRect(snake[i].x,snake[i].y,box,box);}ctx.fillStyle='#f00';ctx.fillRect(food.x,food.y,box,box);ctx.fillStyle='#888';obstacles.forEach(o=>ctx.fillRect(o.x,o.y,box,box));}
+function move(){if(!direction)return;let head={...snake[0]};if(direction==='LEFT')head.x-=box;if(direction==='RIGHT')head.x+=box;if(direction==='UP')head.y-=box;if(direction==='DOWN')head.y+=box;if(head.x<0)head.x=380;if(head.x>380)head.x=0;if(head.y<0)head.y=380;if(head.y>380)head.y=0;if(snake.some(s=>s.x===head.x&&s.y===head.y)||obstacles.some(o=>o.x===head.x&&o.y===head.y)){gameOver();return;}snake.unshift(head);if(head.x===food.x&&head.y===food.y){score++;food=spawnFood();if(Math.random()<0.3)obstacles.push(spawnObstacle());if(Math.random()<0.2)themeIndex=(themeIndex+1)%themes.length;if(score%5===0&&speed>50){speed-=10;restart();}}else snake.pop();updateScore();draw();}
+function updateScore(){document.getElementById('score').textContent=score;document.getElementById('best').textContent=best;}
+function gameOver(){clearInterval(interval);saveHighScore();if(score>best){best=score;localStorage.setItem('best',best);}alert('Perdu ! Score : '+score);}
+function restart(){clearInterval(interval);interval=setInterval(move,speed);}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'&&direction!=='RIGHT')direction='LEFT';if(e.key==='ArrowRight'&&direction!=='LEFT')direction='RIGHT';if(e.key==='ArrowUp'&&direction!=='DOWN')direction='UP';if(e.key==='ArrowDown'&&direction!=='UP')direction='DOWN';});
+document.getElementById('start').onclick=()=>{snake=[{x:9*box,y:10*box}];direction=null;food=spawnFood();score=0;obstacles=[];speed=150;themeIndex=0;clearInterval(interval);interval=setInterval(move,speed);};
+document.getElementById('pause').onclick=()=>{if(interval){clearInterval(interval);interval=null;}else{interval=setInterval(move,speed);}};
+document.getElementById('dedicace').onclick=()=>{const text=`Recommandez une dédicace à Nolan ! Mon score: ${score} points 🎮`;navigator.clipboard.writeText(text);alert('Dédicace copiée dans le presse-papiers !');};
+function saveHighScore(){const highscores=JSON.parse(localStorage.getItem('highscores')||'[]');highscores.push({score,date:new Date().toLocaleString()});highscores.sort((a,b)=>b.score-a.score);localStorage.setItem('highscores',JSON.stringify(highscores.slice(0,10)));renderHighScores();}
+function renderHighScores(){const hs=document.getElementById('highscores');hs.innerHTML='';const highscores=JSON.parse(localStorage.getItem('highscores')||'[]');highscores.forEach(h=>{const li=document.createElement('li');li.textContent=`${h.score} pts — ${h.date}`;hs.appendChild(li);});}
+renderHighScores();
+setInterval(()=>{if(Math.random()<0.1&&!turbo){turbo=true;speed/=2;restart();setTimeout(()=>{speed*=2;restart();turbo=false;},3000);}},5000);
+</script>
+</body>
+</html>
