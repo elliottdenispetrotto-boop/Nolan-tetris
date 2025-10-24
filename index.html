@@ -225,11 +225,17 @@ button{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);bor
 
   function clearTimers(){ if(tickTimer) clearInterval(tickTimer); tickTimer = null; if(turboTimeout){ clearTimeout(turboTimeout); turboTimeout=null; } if(turboWarnTimeout){ clearTimeout(turboWarnTimeout); turboWarnTimeout=null; } }
 
-  function start(){ if(running) return; running=true; paused=false; speed = parseInt(speedRange.value,10); tickTimer = setInterval(tick, speed); showToast('Go !'); }
+  function start(){ if(running) return; // ensure a fresh interval
+    running=true; paused=false; speed = parseInt(speedRange.value,10); // if no direction yet, start moving right
+    if(dir.x===0 && dir.y===0){ dir = {x:1,y:0}; }
+    if(tickTimer) clearInterval(tickTimer);
+    tickTimer = setInterval(tick, speed);
+    showToast('Go !');
+  }
 
   function restart(){ clearTimers(); init(); start(); }
 
-  function pauseToggle(){ if(!running) return; paused = !paused; if(paused){ clearInterval(tickTimer); tickTimer = null; pauseBtn.textContent = 'Reprendre'; showToast('Pause'); } else { tickTimer = setInterval(tick, speed); pauseBtn.textContent = 'Pause'; showToast('Reprise'); } }
+  function pauseToggle(){ if(!running) return; paused = !paused; if(paused){ clearInterval(tickTimer); tickTimer = null; pauseBtn.textContent = 'Reprendre'; showToast('Pause'); } else { if(tickTimer) clearInterval(tickTimer); tickTimer = setInterval(tick, speed); pauseBtn.textContent = 'Pause'; showToast('Reprise'); } }
 
   function endGame(){ running=false; clearTimers(); saveHighScore(); if(score>best){ best=score; localStorage.setItem('snake_best', best); } showToast('Game over — score: '+score); updateUI(); }
 
