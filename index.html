@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Snake - Dédicace à Nolan</title>
 <style>
-body{margin:0;font-family:sans-serif;background:#000;color:#fff;text-align:center}canvas{background:#111;display:block;margin:20px auto;border:3px solid #0f0;border-radius:10px}button{margin:5px;padding:10px 20px;background:#0f0;color:#000;border:none;border-radius:5px;cursor:pointer;font-weight:bold}button:hover{background:#7f7}#scoreboard{margin:10px;font-size:20px}.highscores{max-width:300px;margin:20px auto;text-align:left;background:#111;padding:10px;border-radius:10px}li{margin:5px 0}.features{max-width:300px;margin:20px auto;text-align:left;background:#111;padding:10px;border-radius:10px}
+body{margin:0;font-family:sans-serif;background:#000;color:#fff;text-align:center;overflow:hidden}canvas{background:#111;display:block;margin:10px auto;border:3px solid #0f0;border-radius:10px;touch-action:none;width:90vw;max-width:400px;height:90vw;max-height:400px}button{margin:5px;padding:10px 20px;background:#0f0;color:#000;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:16px}button:hover{background:#7f7}#scoreboard{margin:10px;font-size:22px}.highscores,.features{max-width:320px;margin:15px auto;text-align:left;background:#111;padding:10px;border-radius:10px;font-size:14px}li{margin:5px 0}
 </style>
 </head>
 <body>
@@ -35,33 +35,28 @@ body{margin:0;font-family:sans-serif;background:#000;color:#fff;text-align:cente
 const canvas=document.getElementById('snake');
 const ctx=canvas.getContext('2d');
 const box=20;
-let snake=[{x:9*box,y:10*box}];
-let direction=null;
-let food=spawnFood();
-let score=0;
-let best=localStorage.getItem('best')||0;
-let interval=null;
-let speed=150;
-let obstacles=[];
-let turbo=false;
-let themeIndex=0;
+let snake,dir,food,score,best,interval,speed,obstacles,turbo,themeIndex;
 const themes=['#0f0','#f0f','#0ff','#ff0','#f60'];
-updateScore();
+function initGame(){snake=[{x:9*box,y:10*box}];dir=null;food=spawnFood();score=0;obstacles=[];speed=150;turbo=false;themeIndex=0;updateScore();draw();}
 function spawnFood(){return{x:Math.floor(Math.random()*19+1)*box,y:Math.floor(Math.random()*19+1)*box}};
 function spawnObstacle(){return{x:Math.floor(Math.random()*19+1)*box,y:Math.floor(Math.random()*19+1)*box}};
-function draw(){ctx.fillStyle='#000';ctx.fillRect(0,0,400,400);ctx.fillStyle=themes[themeIndex];for(let i=0;i<snake.length;i++){ctx.fillRect(snake[i].x,snake[i].y,box,box);}ctx.fillStyle='#f00';ctx.fillRect(food.x,food.y,box,box);ctx.fillStyle='#888';obstacles.forEach(o=>ctx.fillRect(o.x,o.y,box,box));}
-function move(){if(!direction)return;let head={...snake[0]};if(direction==='LEFT')head.x-=box;if(direction==='RIGHT')head.x+=box;if(direction==='UP')head.y-=box;if(direction==='DOWN')head.y+=box;if(head.x<0)head.x=380;if(head.x>380)head.x=0;if(head.y<0)head.y=380;if(head.y>380)head.y=0;if(snake.some(s=>s.x===head.x&&s.y===head.y)||obstacles.some(o=>o.x===head.x&&o.y===head.y)){gameOver();return;}snake.unshift(head);if(head.x===food.x&&head.y===food.y){score++;food=spawnFood();if(Math.random()<0.3)obstacles.push(spawnObstacle());if(Math.random()<0.2)themeIndex=(themeIndex+1)%themes.length;if(score%5===0&&speed>50){speed-=10;restart();}}else snake.pop();updateScore();draw();}
-function updateScore(){document.getElementById('score').textContent=score;document.getElementById('best').textContent=best;}
-function gameOver(){clearInterval(interval);saveHighScore();if(score>best){best=score;localStorage.setItem('best',best);}alert('Perdu ! Score : '+score);}
-function restart(){clearInterval(interval);interval=setInterval(move,speed);}
-document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'&&direction!=='RIGHT')direction='LEFT';if(e.key==='ArrowRight'&&direction!=='LEFT')direction='RIGHT';if(e.key==='ArrowUp'&&direction!=='DOWN')direction='UP';if(e.key==='ArrowDown'&&direction!=='UP')direction='DOWN';});
-document.getElementById('start').onclick=()=>{snake=[{x:9*box,y:10*box}];direction=null;food=spawnFood();score=0;obstacles=[];speed=150;themeIndex=0;clearInterval(interval);interval=setInterval(move,speed);};
-document.getElementById('pause').onclick=()=>{if(interval){clearInterval(interval);interval=null;}else{interval=setInterval(move,speed);}};
-document.getElementById('dedicace').onclick=()=>{const text=`Recommandez une dédicace à Nolan ! Mon score: ${score} points 🎮`;navigator.clipboard.writeText(text);alert('Dédicace copiée dans le presse-papiers !');};
+function draw(){ctx.fillStyle='#000';ctx.fillRect(0,0,400,400);ctx.fillStyle=themes[themeIndex];snake.forEach(s=>ctx.fillRect(s.x,s.y,box,box));ctx.fillStyle='#f00';ctx.fillRect(food.x,food.y,box,box);ctx.fillStyle='#888';obstacles.forEach(o=>ctx.fillRect(o.x,o.y,box,box));}
+function move(){if(!dir)return;let head={...snake[0]};if(dir==='LEFT')head.x-=box;if(dir==='RIGHT')head.x+=box;if(dir==='UP')head.y-=box;if(dir==='DOWN')head.y+=box;if(head.x<0)head.x=380;if(head.x>380)head.x=0;if(head.y<0)head.y=380;if(head.y>380)head.y=0;if(snake.some(s=>s.x===head.x&&s.y===head.y)||obstacles.some(o=>o.x===head.x&&o.y===head.y)){return gameOver();}snake.unshift(head);if(head.x===food.x&&head.y===food.y){score++;food=spawnFood();if(Math.random()<0.3)obstacles.push(spawnObstacle());if(Math.random()<0.2)themeIndex=(themeIndex+1)%themes.length;if(score%5===0&&speed>50){speed-=10;restartInterval();}}else snake.pop();updateScore();draw();}
+function updateScore(){document.getElementById('score').textContent=score;best=localStorage.getItem('best')||0;document.getElementById('best').textContent=best;}
+function gameOver(){clearInterval(interval);saveHighScore();if(score>best){best=score;localStorage.setItem('best',best);}alert('Perdu ! Score : '+score);initGame();}
+function startGame(){clearInterval(interval);initGame();interval=setInterval(move,speed);}
+function restartInterval(){clearInterval(interval);interval=setInterval(move,speed);}
 function saveHighScore(){const highscores=JSON.parse(localStorage.getItem('highscores')||'[]');highscores.push({score,date:new Date().toLocaleString()});highscores.sort((a,b)=>b.score-a.score);localStorage.setItem('highscores',JSON.stringify(highscores.slice(0,10)));renderHighScores();}
 function renderHighScores(){const hs=document.getElementById('highscores');hs.innerHTML='';const highscores=JSON.parse(localStorage.getItem('highscores')||'[]');highscores.forEach(h=>{const li=document.createElement('li');li.textContent=`${h.score} pts — ${h.date}`;hs.appendChild(li);});}
+function handleTouch(){let startX,startY;canvas.addEventListener('touchstart',e=>{const t=e.touches[0];startX=t.clientX;startY=t.clientY;});canvas.addEventListener('touchmove',e=>{const t=e.touches[0];const dx=t.clientX-startX;const dy=t.clientY-startY;if(Math.abs(dx)>Math.abs(dy)){if(dx>0&&dir!=='LEFT')dir='RIGHT';else if(dx<0&&dir!=='RIGHT')dir='LEFT';}else{if(dy>0&&dir!=='UP')dir='DOWN';else if(dy<0&&dir!=='DOWN')dir='UP';}},{passive:true});}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'&&dir!=='RIGHT')dir='LEFT';if(e.key==='ArrowRight'&&dir!=='LEFT')dir='RIGHT';if(e.key==='ArrowUp'&&dir!=='DOWN')dir='UP';if(e.key==='ArrowDown'&&dir!=='UP')dir='DOWN';});
+handleTouch();
 renderHighScores();
-setInterval(()=>{if(Math.random()<0.1&&!turbo){turbo=true;speed/=2;restart();setTimeout(()=>{speed*=2;restart();turbo=false;},3000);}},5000);
+document.getElementById('start').onclick=startGame;
+document.getElementById('pause').onclick=()=>{if(interval){clearInterval(interval);interval=null;}else restartInterval();};
+document.getElementById('dedicace').onclick=()=>{const text=`Recommandez une dédicace à Nolan ! Mon score: ${score} points 🎮`;navigator.clipboard.writeText(text);alert('Dédicace copiée dans le presse-papiers !');};
+setInterval(()=>{if(Math.random()<0.1&&!turbo){turbo=true;speed/=2;restartInterval();setTimeout(()=>{speed*=2;restartInterval();turbo=false;},3000);}},5000);
+initGame();
 </script>
 </body>
 </html>
